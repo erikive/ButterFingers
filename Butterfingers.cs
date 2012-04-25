@@ -130,11 +130,9 @@ namespace Butterfingers
                 return;
             }
             var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
-            var plr = foundplr[0];
-            if (foundplr.Count == 1)
+            if (foundplr.Count == 0)
             {
-                Players[GetPlayerIndex(plr.Index)].stupidized = !Players[GetPlayerIndex(plr.Index)].butterfingered;
-                args.Player.SendMessage(string.Format("Toggled butterfingers on {0}!", plr.Name));
+                args.Player.SendMessage("Invalid player!", Color.Red);
                 return;
             }
             else if (foundplr.Count > 1)
@@ -142,9 +140,18 @@ namespace Butterfingers
                 args.Player.SendMessage(string.Format("More than one ({0}) player matched!", args.Parameters.Count), Color.Red);
                 return;
             }
+            var plr = foundplr[0];
+            if (Players[GetPlayerIndex(plr.Index)].butterfingered)
+            {
+                Players[GetPlayerIndex(plr.Index)].butterfingered = false;
+                args.Player.SendMessage("Player is no longer butterfingered.");
+                return;
+            }
             else
             {
-                args.Player.SendMessage("Player not found!", Color.Red);
+                Players[GetPlayerIndex(plr.Index)].butterfingered = true;
+                args.Player.SendMessage("Butterfingered " + plr.Name + "!");
+                return;
             }
         }
 
@@ -156,11 +163,9 @@ namespace Butterfingers
                 return;
             }
             var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
-            var plr = foundplr[0];
-            if (foundplr.Count == 1)
+            if (foundplr.Count == 0)
             {
-                Players[GetPlayerIndex(plr.Index)].stupidized = !Players[GetPlayerIndex(plr.Index)].stupidized;
-                args.Player.SendMessage(string.Format("Toggled stupidization on {0}!", plr.Name));
+                args.Player.SendMessage("Invalid player!", Color.Red);
                 return;
             }
             else if (foundplr.Count > 1)
@@ -168,9 +173,18 @@ namespace Butterfingers
                 args.Player.SendMessage(string.Format("More than one ({0}) player matched!", args.Parameters.Count), Color.Red);
                 return;
             }
+            var plr = foundplr[0];
+            if (Players[GetPlayerIndex(plr.Index)].stupidized)
+            {
+                Players[GetPlayerIndex(plr.Index)].stupidized = false;
+                args.Player.SendMessage("Player is no longer stupid.");
+                return;
+            }
             else
             {
-                args.Player.SendMessage("Player not found!", Color.Red);
+                Players[GetPlayerIndex(plr.Index)].stupidized = true;
+                args.Player.SendMessage("Stupidized " + plr.Name + "!");
+                return;
             }
         }
 
@@ -183,7 +197,7 @@ namespace Butterfingers
             }
             TSPlayer player = GetTSPlayerByIndex(ply);
 
-            if (Players[ply].butterfingered)
+            if (Players[GetPlayerIndex(ply)].butterfingered)
             {
                 for (int i = 0; i < text2.Length; i++)
                 {
@@ -193,14 +207,14 @@ namespace Butterfingers
                     }
                     catch { } // meh, lazy mood
                 }
-                text = new string(text2);
+                string textR = new string(text2);
                 TShock.Utils.Broadcast(
-                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, text),
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
                     player.Group.R, player.Group.G, player.Group.B);
                 e.Handled = true;
                 return;
             }
-            if (Players[ply].stupidized)
+            if (Players[GetPlayerIndex(ply)].stupidized)
             {
                 string[] words = text.ToLower().Replace(",", "").Replace(".", "").Split(' ');
                 for (int i = 0; i < words.Length; i++)
@@ -338,10 +352,10 @@ namespace Butterfingers
                             words[i] = new string(text3);
                             break;
                     }
-                    text = string.Join(" ", words);
-                }
+                } 
+                string textR = string.Join(" ", words);
                 TShock.Utils.Broadcast(
-                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, text),
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
                     player.Group.R, player.Group.G, player.Group.B);
                 e.Handled = true;
                 return;
