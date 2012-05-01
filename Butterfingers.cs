@@ -18,7 +18,7 @@ namespace Butterfingers
 
         public override Version Version
         {
-            get { return Assembly.GetExecutingAssembly().GetName().Version; }
+            get { return new Version (1, 0, 2); }
         }
 
         public override string Name
@@ -44,26 +44,20 @@ namespace Butterfingers
 
         public override void Initialize()
         {
-            GameHooks.Update += OnUpdate;
             NetHooks.GreetPlayer += OnGreetPlayer;
             ServerHooks.Chat += OnChat;
+            Load();
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                GameHooks.Update -= OnUpdate;
                 NetHooks.GreetPlayer -= OnGreetPlayer;
                 ServerHooks.Chat -= OnChat;
             }
 
             base.Dispose(disposing);
-        }
-
-        private void OnUpdate()
-        {
-            Load();            
         }
 
         public static string randomString(params string[] args)
@@ -74,8 +68,10 @@ namespace Butterfingers
 
         public static void Load()
         {
-            Commands.ChatCommands.Add(new Command("stupidize", Butterfinger, "butterfingers"));
-            Commands.ChatCommands.Add(new Command("stupidize", Stupidize, "stupidize"));
+            Commands.ChatCommands.Add(new Command("stupidize", Butterfinger, "butterfingers", "bf"));
+            Commands.ChatCommands.Add(new Command("stupidize", Stupidize, "stupidize", "stupid"));
+            Commands.ChatCommands.Add(new Command("stupidize", Caps, "caps"));
+            Commands.ChatCommands.Add(new Command("stupidize", RCaps, "rcaps"));
         }
 
         public void OnGreetPlayer(int ply, HandledEventArgs e)
@@ -90,11 +86,15 @@ namespace Butterfingers
             public TSPlayer TSPlayer { get { return TShock.Players[Index]; } }
             public bool butterfingered { get; set; }
             public bool stupidized { get; set; }
+            public bool caps { get; set; }
+            public bool rcaps { get; set; }
             public Player(int index)
             {
                 Index = index;
                 butterfingered = false;
                 stupidized = false;
+                caps = false;
+                rcaps = false;
             }
         }
 
@@ -141,6 +141,11 @@ namespace Butterfingers
                 return;
             }
             var plr = foundplr[0];
+            if (plr.Group.HasPermission("immunetostupid") && !args.Player.Group.HasPermission("stupidizeall"))
+            {
+                args.Player.SendMessage("Player is immune to butterfingers.");
+                return;
+            }
             if (Players[GetPlayerIndex(plr.Index)].butterfingered)
             {
                 Players[GetPlayerIndex(plr.Index)].butterfingered = false;
@@ -149,6 +154,9 @@ namespace Butterfingers
             }
             else
             {
+                Players[GetPlayerIndex(plr.Index)].stupidized = false;
+                Players[GetPlayerIndex(plr.Index)].caps = false;
+                Players[GetPlayerIndex(plr.Index)].rcaps = false;
                 Players[GetPlayerIndex(plr.Index)].butterfingered = true;
                 args.Player.SendMessage("Butterfingered " + plr.Name + "!");
                 return;
@@ -174,16 +182,106 @@ namespace Butterfingers
                 return;
             }
             var plr = foundplr[0];
+            if (plr.Group.HasPermission("immunetostupid") && !args.Player.Group.HasPermission("stupidizeall"))
+            {
+                args.Player.SendMessage("Player is immune to stupidization.");
+                return;
+            }
             if (Players[GetPlayerIndex(plr.Index)].stupidized)
             {
                 Players[GetPlayerIndex(plr.Index)].stupidized = false;
-                args.Player.SendMessage("Player is no longer stupid.");
+                args.Player.SendMessage("Player is no longer stupid. (Kinda)");
                 return;
             }
             else
             {
+                Players[GetPlayerIndex(plr.Index)].butterfingered = false;
+                Players[GetPlayerIndex(plr.Index)].caps = false;
+                Players[GetPlayerIndex(plr.Index)].rcaps = false;
                 Players[GetPlayerIndex(plr.Index)].stupidized = true;
                 args.Player.SendMessage("Stupidized " + plr.Name + "!");
+                return;
+            }
+        }
+
+        public static void Caps(CommandArgs args)
+        {
+            if (args.Parameters.Count < 1)
+            {
+                args.Player.SendMessage("Invalid syntax! Proper syntax: /stupidize [player]", Color.Red);
+                return;
+            }
+            var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
+            if (foundplr.Count == 0)
+            {
+                args.Player.SendMessage("Invalid player!", Color.Red);
+                return;
+            }
+            else if (foundplr.Count > 1)
+            {
+                args.Player.SendMessage(string.Format("More than one ({0}) player matched!", args.Parameters.Count), Color.Red);
+                return;
+            }
+            var plr = foundplr[0];
+            if (plr.Group.HasPermission("immunetostupid") && !args.Player.Group.HasPermission("stupidizeall"))
+            {
+                args.Player.SendMessage("Player is immune to caps.");
+                return;
+            }
+            if (Players[GetPlayerIndex(plr.Index)].caps)
+            {
+                Players[GetPlayerIndex(plr.Index)].caps = false;
+                args.Player.SendMessage("Player is no longer talking in caps.");
+                return;
+            }
+            else
+            {
+                Players[GetPlayerIndex(plr.Index)].butterfingered = false;
+                Players[GetPlayerIndex(plr.Index)].stupidized = false;
+                Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                Players[GetPlayerIndex(plr.Index)].caps = true;
+                args.Player.SendMessage("Capsed " + plr.Name + "!");
+                return;
+            }
+        }
+
+        public static void RCaps(CommandArgs args)
+        {
+            if (args.Parameters.Count < 1)
+            {
+                args.Player.SendMessage("Invalid syntax! Proper syntax: /stupidize [player]", Color.Red);
+                return;
+            }
+            var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
+            if (foundplr.Count == 0)
+            {
+                args.Player.SendMessage("Invalid player!", Color.Red);
+                return;
+            }
+            else if (foundplr.Count > 1)
+            {
+                args.Player.SendMessage(string.Format("More than one ({0}) player matched!", args.Parameters.Count), Color.Red);
+                return;
+            }
+            var plr = foundplr[0];
+            if (plr.Group.HasPermission("immunetostupid") && !args.Player.Group.HasPermission("stupidizeall"))
+            {
+                args.Player.SendMessage("Player is immune to stupidization.");
+                return;
+            }
+            if (Players[GetPlayerIndex(plr.Index)].rcaps)
+            {
+                Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                args.Player.SendMessage("Player is no longer randomly caps.");
+                return;
+            }
+            else
+            {
+                Players[GetPlayerIndex(plr.Index)].butterfingered = false;
+                Players[GetPlayerIndex(plr.Index)].stupidized = false;
+                Players[GetPlayerIndex(plr.Index)].caps = false;
+                Players[GetPlayerIndex(plr.Index)].rcaps = true;
+                args.Player.SendMessage("Random capsed " + plr.Name + "!");
                 return;
             }
         }
@@ -191,12 +289,45 @@ namespace Butterfingers
         public void OnChat(messageBuffer msg, int ply, string text, HandledEventArgs e)
         {
             char[] text2 = text.ToCharArray();
-            if (text2[0].ToString() == "/")
+            TSPlayer player = GetTSPlayerByIndex(ply);
+            if (!e.Handled)
+            {
+                if (text2[0].ToString() == "/")
+                {
+                    e.Handled = false;
+                    return;
+                }
+            }
+            else
             {
                 return;
             }
-            TSPlayer player = GetTSPlayerByIndex(ply);
-
+            if (Players[GetPlayerIndex(ply)].rcaps)
+            {
+                for (int i = 0; i < text2.Length; i++)
+                {
+                    try
+                    {
+                        if (rnd.Next(10) <= 3) text2[i] = char.ToUpper(text2[i]);
+                    }
+                    catch { } // meh, lazy mood
+                }
+                string textR = new string(text2);
+                TShock.Utils.Broadcast(
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
+                    player.Group.R, player.Group.G, player.Group.B);
+                e.Handled = true;
+                return;
+            }
+            if (Players[GetPlayerIndex(ply)].caps)
+            {
+                string textR = text.ToUpper();
+                TShock.Utils.Broadcast(
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
+                    player.Group.R, player.Group.G, player.Group.B);
+                e.Handled = true;
+                return;
+            }
             if (Players[GetPlayerIndex(ply)].butterfingered)
             {
                 for (int i = 0; i < text2.Length; i++)
@@ -268,6 +399,10 @@ namespace Butterfingers
 
                         case "are":
                             words[i] = randomString("r", "be");
+                            break;
+
+                        case "admin":
+                            words[i] = randomString("admn", "op");
                             break;
 
                         case "code":
@@ -352,7 +487,7 @@ namespace Butterfingers
                             words[i] = new string(text3);
                             break;
                     }
-                } 
+                }
                 string textR = string.Join(" ", words);
                 TShock.Utils.Broadcast(
                     String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
