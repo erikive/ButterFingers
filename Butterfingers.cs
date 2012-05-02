@@ -15,6 +15,7 @@ namespace Butterfingers
     {
         Random rnd = new Random();
         public static List<Player> Players = new List<Player>();
+        int chance = 30;
 
         public override Version Version
         {
@@ -72,6 +73,7 @@ namespace Butterfingers
             Commands.ChatCommands.Add(new Command("stupidize", Stupidize, "stupidize", "stupid"));
             Commands.ChatCommands.Add(new Command("stupidize", Caps, "caps"));
             Commands.ChatCommands.Add(new Command("stupidize", RCaps, "rcaps"));
+            Commands.ChatCommands.Add(new Command("stupidize", Backwards, "backwards", "reverse"));
         }
 
         public void OnGreetPlayer(int ply, HandledEventArgs e)
@@ -88,6 +90,7 @@ namespace Butterfingers
             public bool stupidized { get; set; }
             public bool caps { get; set; }
             public bool rcaps { get; set; }
+            public bool backwards { get; set; }
             public Player(int index)
             {
                 Index = index;
@@ -95,6 +98,7 @@ namespace Butterfingers
                 stupidized = false;
                 caps = false;
                 rcaps = false;
+                backwards = false;
             }
         }
 
@@ -157,6 +161,7 @@ namespace Butterfingers
                 Players[GetPlayerIndex(plr.Index)].stupidized = false;
                 Players[GetPlayerIndex(plr.Index)].caps = false;
                 Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                Players[GetPlayerIndex(plr.Index)].backwards = false;
                 Players[GetPlayerIndex(plr.Index)].butterfingered = true;
                 args.Player.SendMessage("Butterfingered " + plr.Name + "!");
                 return;
@@ -198,6 +203,7 @@ namespace Butterfingers
                 Players[GetPlayerIndex(plr.Index)].butterfingered = false;
                 Players[GetPlayerIndex(plr.Index)].caps = false;
                 Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                Players[GetPlayerIndex(plr.Index)].backwards = false;
                 Players[GetPlayerIndex(plr.Index)].stupidized = true;
                 args.Player.SendMessage("Stupidized " + plr.Name + "!");
                 return;
@@ -208,7 +214,7 @@ namespace Butterfingers
         {
             if (args.Parameters.Count < 1)
             {
-                args.Player.SendMessage("Invalid syntax! Proper syntax: /stupidize [player]", Color.Red);
+                args.Player.SendMessage("Invalid syntax! Proper syntax: /caps [player]", Color.Red);
                 return;
             }
             var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
@@ -239,6 +245,7 @@ namespace Butterfingers
                 Players[GetPlayerIndex(plr.Index)].butterfingered = false;
                 Players[GetPlayerIndex(plr.Index)].stupidized = false;
                 Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                Players[GetPlayerIndex(plr.Index)].backwards = false;
                 Players[GetPlayerIndex(plr.Index)].caps = true;
                 args.Player.SendMessage("Capsed " + plr.Name + "!");
                 return;
@@ -249,7 +256,7 @@ namespace Butterfingers
         {
             if (args.Parameters.Count < 1)
             {
-                args.Player.SendMessage("Invalid syntax! Proper syntax: /stupidize [player]", Color.Red);
+                args.Player.SendMessage("Invalid syntax! Proper syntax: /rcaps [player]", Color.Red);
                 return;
             }
             var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
@@ -280,8 +287,51 @@ namespace Butterfingers
                 Players[GetPlayerIndex(plr.Index)].butterfingered = false;
                 Players[GetPlayerIndex(plr.Index)].stupidized = false;
                 Players[GetPlayerIndex(plr.Index)].caps = false;
+                Players[GetPlayerIndex(plr.Index)].backwards = false;
                 Players[GetPlayerIndex(plr.Index)].rcaps = true;
                 args.Player.SendMessage("Random capsed " + plr.Name + "!");
+                return;
+            }
+        }
+
+        public static void Backwards(CommandArgs args)
+        {
+            if (args.Parameters.Count < 1)
+            {
+                args.Player.SendMessage("Invalid syntax! Proper syntax: /backwards [player]", Color.Red);
+                return;
+            }
+            var foundplr = TShock.Utils.FindPlayer(args.Parameters[0]);
+            if (foundplr.Count == 0)
+            {
+                args.Player.SendMessage("Invalid player!", Color.Red);
+                return;
+            }
+            else if (foundplr.Count > 1)
+            {
+                args.Player.SendMessage(string.Format("More than one ({0}) player matched!", args.Parameters.Count), Color.Red);
+                return;
+            }
+            var plr = foundplr[0];
+            if (plr.Group.HasPermission("immunetostupid") && !args.Player.Group.HasPermission("stupidizeall"))
+            {
+                args.Player.SendMessage("Player is immune to stupidization.");
+                return;
+            }
+            if (Players[GetPlayerIndex(plr.Index)].backwards)
+            {
+                Players[GetPlayerIndex(plr.Index)].backwards = false;
+                args.Player.SendMessage("Player is no longer talking backwards.");
+                return;
+            }
+            else
+            {
+                Players[GetPlayerIndex(plr.Index)].butterfingered = false;
+                Players[GetPlayerIndex(plr.Index)].stupidized = false;
+                Players[GetPlayerIndex(plr.Index)].caps = false;
+                Players[GetPlayerIndex(plr.Index)].rcaps = false;
+                Players[GetPlayerIndex(plr.Index)].backwards = true;
+                args.Player.SendMessage(plr.Name + " is now talking backwards.");
                 return;
             }
         }
@@ -302,15 +352,25 @@ namespace Butterfingers
             {
                 return;
             }
+            if (Players[GetPlayerIndex(ply)].backwards)
+            {
+                Array.Reverse(text2);
+                string textR = new string(text2);
+                TShock.Utils.Broadcast(
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
+                    player.Group.R, player.Group.G, player.Group.B);
+                e.Handled = true;
+                return;
+            }
             if (Players[GetPlayerIndex(ply)].rcaps)
             {
                 for (int i = 0; i < text2.Length; i++)
                 {
                     try
                     {
-                        if (rnd.Next(10) <= 3) text2[i] = char.ToUpper(text2[i]);
+                        if (rnd.Next(100) <= chance) text2[i] = char.ToUpper(text2[i]);
                     }
-                    catch { } // meh, lazy mood
+                    catch { }
                 }
                 string textR = new string(text2);
                 TShock.Utils.Broadcast(
@@ -334,7 +394,14 @@ namespace Butterfingers
                 {
                     try
                     {
-                        if (rnd.Next(10) == 3) text2[i] = (char)(((int)text[i]) + 1);
+                        if (rnd.Next(0, 2) == 1)
+                        {
+                            if (rnd.Next(10) == 3) text2[i] = (char)(((int)text[i]) + 1);
+                        }
+                        else
+                        {
+                            if (rnd.Next(10) == 3) text2[i] = (char)(((int)text[i]) - 1);
+                        }
                     }
                     catch { } // meh, lazy mood
                 }
@@ -480,7 +547,14 @@ namespace Butterfingers
                             {
                                 try
                                 {
-                                    if (rnd.Next(20) == 3) text3[i1] = (char)(((int)text[i1]) + 1);
+                                    if (rnd.Next(0, 2) == 1)
+                                    {
+                                        if (rnd.Next(20) == 3) text3[i] = (char)(((int)text[i]) + 1);
+                                    }
+                                    else
+                                    {
+                                        if (rnd.Next(20) == 3) text3[i] = (char)(((int)text[i]) - 1);
+                                    }
                                 }
                                 catch { } // meh, lazy mood
                             }
