@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Linq;
 using System.IO;
-using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.ComponentModel;
@@ -13,7 +13,8 @@ namespace Butterfingers
     [APIVersion(1, 11)]
     public class Butterfingers : TerrariaPlugin
     {
-        Random rnd = new Random();
+        public static ButterList Stupids;
+        public static String savepath = "";
         public static List<Player> Players = new List<Player>();
         int chance = 30;
 
@@ -41,6 +42,18 @@ namespace Butterfingers
             : base(game)
         {
             Order = -1;
+            savepath = Path.Combine(Path.Combine(TShockAPI.TShock.SavePath, "Butterfingers.json"));
+
+            ButterConfig reader = new ButterConfig();
+            if (File.Exists(savepath))
+            {
+                Stupids = reader.readFile(Path.Combine(TShockAPI.TShock.SavePath, "Butterfingers.json"));
+            }
+            else
+            {
+                Stupids = reader.writeFile(Path.Combine(TShockAPI.TShock.SavePath, "Butterfingers.json"));
+                Console.WriteLine("Empty Butterfingers Config file being created.");
+            }
         }
 
         public override void Initialize()
@@ -125,6 +138,8 @@ namespace Butterfingers
             }
             return null;
         }
+
+        #region Commands
 
         public static void Butterfinger(CommandArgs args)
         {
@@ -336,10 +351,12 @@ namespace Butterfingers
             }
         }
 
+        #endregion Commands
+
         public void OnChat(messageBuffer msg, int ply, string text, HandledEventArgs e)
         {
+            var bfe = Stupids.ButterFingers[0];
             char[] text2 = text.ToCharArray();
-            TSPlayer player = GetTSPlayerByIndex(ply);
             if (!e.Handled)
             {
                 if (text2[0].ToString() == "/")
@@ -350,6 +367,48 @@ namespace Butterfingers
             }
             else
             {
+                return;
+            }
+
+            TSPlayer player = GetTSPlayerByIndex(ply);
+            Random rnd = new Random();
+
+            //configuration based stupidization test
+            if (Players[GetPlayerIndex(ply)].stupidized)
+            {
+                string[] words = text.ToLower().Replace(",", "").Replace(".", "").Split(' ');
+                for (int i = 0; i < words.Length; i++)
+                {
+                    for (int i1 = 0; i1 < bfe.Word.Length; i1++)
+                    {
+                        string[] match = bfe.Word[i1].Split(bfe.separator);
+                        string[] replace = bfe.Replacements[i1].Split(bfe.separator);
+                        if (match.Contains<String>(words[i]))
+                            words[i] = replace[rnd.Next(replace.Length)];
+                    }
+                }
+                string textR = string.Join(" ", words);
+                char[] textS = textR.ToCharArray();
+                for (int i = 0; i < textS.Length; i++)
+                {
+                    try
+                    {
+                        if (rnd.Next(0, 2) == 1)
+                        {
+                            if (rnd.Next(100) <= bfe.RandomPercentage) textS[i] = (char)(((int)textR[i]) + 1);
+                        }
+                        else
+                        {
+                            if (rnd.Next(100) <= bfe.RandomPercentage) textS[i] = (char)(((int)textR[i]) - 1);
+                        }
+                    }
+                    catch { } // meh, lazy mood
+                }
+                textR = new string(textS);
+                TShock.Utils.Broadcast(
+                    String.Format(TShock.Config.ChatFormat, player.Group.Name, player.Group.Prefix, player.Name, player.Group.Suffix, textR),
+                    player.Group.R, player.Group.G, player.Group.B);
+                e.Handled = true;
                 return;
             }
             if (Players[GetPlayerIndex(ply)].backwards)
@@ -368,7 +427,7 @@ namespace Butterfingers
                 {
                     try
                     {
-                        if (rnd.Next(100) <= chance) text2[i] = char.ToUpper(text2[i]);
+                        if (rnd.Next(100) <= 30) text2[i] = char.ToUpper(text2[i]);
                     }
                     catch { }
                 }
@@ -396,11 +455,11 @@ namespace Butterfingers
                     {
                         if (rnd.Next(0, 2) == 1)
                         {
-                            if (rnd.Next(10) == 3) text2[i] = (char)(((int)text[i]) + 1);
+                            if (rnd.Next(100) <= bfe.RandomPercentage) text2[i] = (char)(((int)text[i]) + 1);
                         }
                         else
                         {
-                            if (rnd.Next(10) == 3) text2[i] = (char)(((int)text[i]) - 1);
+                            if (rnd.Next(100) <= bfe.RandomPercentage) text2[i] = (char)(((int)text[i]) - 1);
                         }
                     }
                     catch { } // meh, lazy mood
@@ -412,7 +471,7 @@ namespace Butterfingers
                 e.Handled = true;
                 return;
             }
-            if (Players[GetPlayerIndex(ply)].stupidized)
+            /*if (Players[GetPlayerIndex(ply)].stupidized)
             {
                 string[] words = text.ToLower().Replace(",", "").Replace(".", "").Split(' ');
                 for (int i = 0; i < words.Length; i++)
@@ -568,7 +627,7 @@ namespace Butterfingers
                     player.Group.R, player.Group.G, player.Group.B);
                 e.Handled = true;
                 return;
-            }
+            }*/
         }
     }
 }
